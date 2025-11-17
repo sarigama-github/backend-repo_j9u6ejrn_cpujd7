@@ -12,9 +12,9 @@ Model name is converted to lowercase for the collection name:
 """
 
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 
-# Example schemas (replace with your own):
+# Example schemas (retain for reference):
 
 class User(BaseModel):
     """
@@ -38,11 +38,28 @@ class Product(BaseModel):
     category: str = Field(..., description="Product category")
     in_stock: bool = Field(True, description="Whether product is in stock")
 
-# Add your own schemas here:
-# --------------------------------------------------
+# New schemas for this project
 
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+class Service(BaseModel):
+    """
+    Service offerings you sell (e.g., website development, SEO, maintenance)
+    Collection name: "service"
+    """
+    title: str = Field(..., description="Service title")
+    slug: str = Field(..., description="URL-friendly identifier")
+    description: str = Field(..., description="Short description of the service")
+    price_from: float = Field(..., ge=0, description="Starting price")
+    features: List[str] = Field(default_factory=list, description="Key features included")
+    popular: bool = Field(False, description="Mark as popular for highlighting")
+
+class Inquiry(BaseModel):
+    """
+    Leads from the contact/quote form
+    Collection name: "inquiry"
+    """
+    name: str = Field(..., description="Client name")
+    email: str = Field(..., description="Client email")
+    company: Optional[str] = Field(None, description="Company name")
+    service_id: Optional[str] = Field(None, description="Selected service id or slug")
+    budget: Optional[str] = Field(None, description="Budget range text")
+    message: Optional[str] = Field(None, description="Message details")

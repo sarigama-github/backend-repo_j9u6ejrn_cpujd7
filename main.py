@@ -1,6 +1,11 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import List, Optional
+
+from schemas import Inquiry, Service
+from database import create_document
 
 app = FastAPI()
 
@@ -12,6 +17,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# -----------------------------
+# Health/check endpoints
+# -----------------------------
 @app.get("/")
 def read_root():
     return {"message": "Hello from FastAPI Backend!"}
@@ -63,6 +71,72 @@ def test_database():
     response["database_name"] = "✅ Set" if os.getenv("DATABASE_NAME") else "❌ Not Set"
     
     return response
+
+# -----------------------------
+# Public content endpoints
+# -----------------------------
+
+class ServiceOut(BaseModel):
+    id: str
+    title: str
+    description: str
+    features: List[str] = []
+    price_from: Optional[float] = None
+
+SERVICES: List[ServiceOut] = [
+    ServiceOut(
+        id="landing",
+        title="Landing Page Turbo",
+        description="Pagină de prezentare modernă, optimizată pentru conversii, livrată rapid.",
+        features=[
+            "Design responsive pe mobil",
+            "Vite + React + Tailwind",
+            "SEO de bază + Analytics",
+            "Formular de contact",
+        ],
+        price_from=399.0,
+    ),
+    ServiceOut(
+        id="ecommerce",
+        title="Magazin Online Lite",
+        description="Catalog de produse cu coș simplu și integrare plăți (Stripe).",
+        features=[
+            "Listă produse + pagină produs",
+            "Coș + checkout",
+            "Panou administrare simplu",
+            "Optimizare viteză",
+        ],
+        price_from=1299.0,
+    ),
+    ServiceOut(
+        id="customapp",
+        title="Aplicație Web Custom",
+        description="Dezvoltare full‑stack pentru ideea ta: API, baze de date, UI modern.",
+        features=[
+            "Arhitectură scalabilă",
+            "FastAPI + MongoDB",
+            "UI modern React",
+            "Deploy și monitorizare",
+        ],
+        price_from=1999.0,
+    ),
+]
+
+@app.get("/api/services", response_model=List[ServiceOut])
+def get_services():
+    return SERVICES
+
+# -----------------------------
+# Lead capture / contact
+# -----------------------------
+
+@app.post("/api/inquiries")
+def create_inquiry(inquiry: Inquiry):
+    try:
+        doc_id = create_document("inquiry", inquiry)
+        return {"status": "ok", "id": doc_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":
